@@ -2,6 +2,7 @@ import sys
 import os
 from pulp import *
 from time import time
+from itertools import combinations
 
 def solve_mtz(n, distances, relax=False):
     t0 = time()
@@ -20,14 +21,31 @@ def solve_mtz(n, distances, relax=False):
     cycle = problem.solve()
 
 def solve_dfj_enum(n, distances, relax=False):
-    pass
+    t0 = time()
+    problem = LpProblem("TSP_DFJ", LpMinimize)
+    cities = range(n)
+    x = pulp.LpVariable.dicts("x", (cities, cities), cat='Binary')
+    problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities)
+    
+    for i in range(n):
+        problem += lpSum(x[i][j] for j in cities if j != i) == 1
+        problem += lpSum(x[j][i] for j in cities if j != i) == 1
 
+    for Qx in range(2, n):
+        subsets = combinations(cities, Qx)
+        for S in subsets:
+            problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
+
+    val = value(problem.objective) if problem.solve(pulp.PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
+    tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
+    t = time() - t0
+    return val, tour, t
 
 def solve_dfj_iter(n, distances):
     pass
 
 def rid_of_cycles(x, n):
-    pass
+    return []
 
 
 
@@ -85,6 +103,7 @@ if __name__ == "__main__":
         print_solution()
     elif f == 3:
         val, tour, t = solve_dfj_enum(n, dists, relax=True)
+        print(val, tour,  t, sep="\n")
         print_solution()
     elif f == 4:
         val, tour, t, iters = solve_dfj_iter(n, dists)
