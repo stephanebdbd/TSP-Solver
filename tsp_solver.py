@@ -1,6 +1,6 @@
 import sys
 import os
-from pulp import *
+from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatusOptimal, PULP_CBC_CMD, value
 from time import time
 from itertools import combinations
 
@@ -9,8 +9,8 @@ def solve_mtz(n, distances, relax=False):
     cities = range(n)
     
     cat_type = 'Continuous' if relax else 'Binary'
-    x = pulp.LpVariable.dicts("x", (cities, cities), lowBound=0, upBound=1, cat=cat_type)
-    u = pulp.LpVariable.dicts("u", cities, lowBound=0, upBound=n-1, cat='Continuous')
+    x = LpVariable.dicts("x", (cities, cities), lowBound=0, upBound=1, cat=cat_type)
+    u = LpVariable.dicts("u", cities, lowBound=0, upBound=n-1, cat='Continuous')
 
     problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities if i != j)
 
@@ -33,32 +33,61 @@ def solve_mtz(n, distances, relax=False):
         for j in cities:
             if x[i][j].varValue == 1:
                 tour.append((i, j))
-    return problem.objective.value(), tour, end_time - start_time
+    return value(problem.objective), tour, end_time - start_time
 
 
 def solve_dfj_enum(n, distances, relax=False):
     t0 = time()
     problem = LpProblem("TSP_DFJ", LpMinimize)
     cities = range(n)
-    x = pulp.LpVariable.dicts("x", (cities, cities), cat='Binary')
+    x = None
+    if relax:
+        x = LpVariable.dicts("x", (cities, cities), lowBound=0, upBound=1, cat='Continuous')
+    else:
+        x = LpVariable.dicts("x", (cities, cities), cat='Binary')
     problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities)
     
     for i in range(n):
         problem += lpSum(x[i][j] for j in cities if j != i) == 1
         problem += lpSum(x[j][i] for j in cities if j != i) == 1
 
-    for Qx in range(2, n):
-        subsets = combinations(cities, Qx)
-        for S in subsets:
-            problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
+    if relax == False:
+        for Qx in range(2, n):
+            subsets = combinations(cities, Qx)
+            for S in subsets:
+                problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
 
-    val = value(problem.objective) if problem.solve(pulp.PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
+    val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
     tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
     t = time() - t0
     return val, tour, t
 
 def solve_dfj_iter(n, distances):
-    pass
+    t0 = time()
+    problem = LpProblem("TSP_DFJ_Iter", LpMinimize)
+    cities = range(n)
+    x = LpVariable.dicts("x", (cities, cities), cat='Binary')
+    problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities)
+    
+    for i in range(n):
+        problem += lpSum(x[i][j] for j in cities if j != i) == 1
+        problem += lpSum(x[j][i] for j in cities if j != i) == 1
+
+    iters = 0
+    while True:
+        iters += 1
+        val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
+        tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
+        
+        cycles = rid_of_cycles(x, n)
+        if not cycles:
+            break
+        
+        for S in cycles:
+            problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
+
+    t = time() - t0
+    return val, tour, t, iters
 
 def rid_of_cycles(x, n):
     return []
