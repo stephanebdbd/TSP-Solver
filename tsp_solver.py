@@ -79,8 +79,10 @@ def solve_dfj_iter(n, distances):
         val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
         tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
         
-        cycles = rid_of_cycles(x, n)
-        if not cycles:
+        cycles = get_subtours(x, n)
+        if len(cycles) == 1 and len(cycles[0]) == n:
+            val = value(problem.objective)
+            tour = cycles[0]
             break
         
         for S in cycles:
@@ -89,12 +91,35 @@ def solve_dfj_iter(n, distances):
     t = time() - t0
     return val, tour, t, iters
 
-def rid_of_cycles(x, n):
-    return []
-
-
-
-
+def get_subtours(x, n):
+    edges = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j and x[i][j].varValue > 0.9:
+                edges[i] = j
+    
+    subtours = []
+    visited = set()
+    
+    while len(visited) < n:
+        current = -1
+        for i in range(n):
+            if i not in visited:
+                current = i
+                break
+        
+        if current == -1: 
+            break
+        
+        cycle = []
+        while current not in visited:
+            visited.add(current)
+            cycle.append(current)
+            current = edges[current]
+        
+        subtours.append(cycle)
+        
+    return subtours
 
 
 def read_instance(filename):
