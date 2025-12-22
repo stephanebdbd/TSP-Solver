@@ -4,7 +4,20 @@ from pulp import *
 from time import time
 
 def solve_mtz(n, distances, relax=False):
-    pass
+    t0 = time()
+    problem = LpProblem("TSP", LpMinimize)
+    cities = range(n)
+    x = pulp.LpVariable.dicts("x", (cities, cities), cat='Binary')
+    u = pulp.LpVariable.dicts("u", cities, lowBound=0, upBound=n-1, cat='Continuous')
+    
+    problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities if i != j)
+    
+    for i in cities:
+        for j in cities:
+            if i != j and i != 0 and j != 0:
+                problem += u[i] - u[j] + (n-1)*x[i][j] <= n-2
+    
+    cycle = problem.solve()
 
 def solve_dfj_enum(n, distances, relax=False):
     pass
@@ -12,7 +25,9 @@ def solve_dfj_enum(n, distances, relax=False):
 
 def solve_dfj_iter(n, distances):
     pass
-    
+
+def rid_of_cycles(x, n):
+    pass
 
 
 
