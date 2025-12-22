@@ -8,7 +8,8 @@ def solve_mtz(n, distances, relax=False):
     problem = LpProblem("TSP", LpMinimize)
     cities = range(n)
     
-    x = pulp.LpVariable.dicts("x", (cities, cities), cat='Binary')
+    cat_type = 'Continuous' if relax else 'Binary'
+    x = pulp.LpVariable.dicts("x", (cities, cities), lowBound=0, upBound=1, cat=cat_type)
     u = pulp.LpVariable.dicts("u", cities, lowBound=0, upBound=n-1, cat='Continuous')
 
     problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities if i != j)
@@ -93,12 +94,17 @@ def read_instance(filename):
         print(f"Error reading instance: {e}")
         sys.exit(1)
 
-def print_solution(val, tour, t, iters=None):
-    print(f"Tour: {tour}")
-    print(f"Cost: {val}")
-    print(f"Time: {t}")
-    if iters:
-        print(f"Iterations: {iters}")
+def print_solution(value_obj, tour, solve_time, iterations=None, status="Optimal"):
+    print(f"Status: {status}")
+    print(f"Objective: {value_obj}")
+    if tour:
+        tour_str = " -> ".join(str(i) for i in tour + [tour[0]])
+        print(f"Tour: {tour_str}")
+    print(f"Time: {solve_time:.4f} sec")
+    if iterations is not None:
+        print(f"Iterations: {iterations}")
+
+    return tour
 
 
 
@@ -113,18 +119,18 @@ if __name__ == "__main__":
     
     if f == 0:
         val, tour, t = solve_mtz(n, dists, relax=False)
-        print_solution(val, tour, t)
+        print_solution(val, tour, t, status="Optimal")
     elif f == 1:
         val, tour, t = solve_mtz(n, dists, relax=True)
-        print_solution(val, tour, t)
+        print_solution(val, None, t, status="Relaxed")
     elif f == 2:
         val, tour, t = solve_dfj_enum(n, dists, relax=False)
-        print_solution(val, tour, t)
+        print_solution(val, tour, t, status="Optimal")
     elif f == 3:
         val, tour, t = solve_dfj_enum(n, dists, relax=True)
-        print_solution(val, tour, t)
+        print_solution(val, None, t, status="Relaxed")
     elif f == 4:
         val, tour, t, iters = solve_dfj_iter(n, dists)
-        print_solution(val, tour, t, iters)
+        print_solution(val, tour, t, iters, status="Optimal")
     else:
         print("????")
