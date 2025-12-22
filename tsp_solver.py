@@ -5,20 +5,35 @@ from time import time
 from itertools import combinations
 
 def solve_mtz(n, distances, relax=False):
-    t0 = time()
     problem = LpProblem("TSP", LpMinimize)
     cities = range(n)
+    
     x = pulp.LpVariable.dicts("x", (cities, cities), cat='Binary')
     u = pulp.LpVariable.dicts("u", cities, lowBound=0, upBound=n-1, cat='Continuous')
-    
+
     problem += lpSum(distances[i][j] * x[i][j] for i in cities for j in cities if i != j)
-    
+
+    for i in cities:
+        #garde fou
+        problem += lpSum(x[i][j] for j in cities if i != j) == 1
+        problem += lpSum(x[j][i] for j in cities if i != j) == 1
+
     for i in cities:
         for j in cities:
             if i != j and i != 0 and j != 0:
-                problem += u[i] - u[j] + (n-1)*x[i][j] <= n-2
-    
-    cycle = problem.solve()
+                problem += u[i] - u[j] + n * x[i][j] <= n - 1
+                
+    start_time = time()
+    problem.solve(PULP_CBC_CMD(msg=False))
+    end_time = time()
+
+    tour = []
+    for i in cities:
+        for j in cities:
+            if x[i][j].varValue == 1:
+                tour.append((i, j))
+    return problem.objective.value(), tour, end_time - start_time
+
 
 def solve_dfj_enum(n, distances, relax=False):
     t0 = time()
@@ -78,8 +93,12 @@ def read_instance(filename):
         print(f"Error reading instance: {e}")
         sys.exit(1)
 
-def print_solution():
-    pass
+def print_solution(val, tour, t, iters=None):
+    print(f"Tour: {tour}")
+    print(f"Cost: {val}")
+    print(f"Time: {t}")
+    if iters:
+        print(f"Iterations: {iters}")
 
 
 
@@ -94,19 +113,18 @@ if __name__ == "__main__":
     
     if f == 0:
         val, tour, t = solve_mtz(n, dists, relax=False)
-        print_solution()
+        print_solution(val, tour, t)
     elif f == 1:
         val, tour, t = solve_mtz(n, dists, relax=True)
-        print_solution()
+        print_solution(val, tour, t)
     elif f == 2:
         val, tour, t = solve_dfj_enum(n, dists, relax=False)
-        print_solution()
+        print_solution(val, tour, t)
     elif f == 3:
         val, tour, t = solve_dfj_enum(n, dists, relax=True)
-        print(val, tour,  t, sep="\n")
-        print_solution()
+        print_solution(val, tour, t)
     elif f == 4:
         val, tour, t, iters = solve_dfj_iter(n, dists)
-        print_solution()
+        print_solution(val, tour, t, iters)
     else:
         print("????")
