@@ -29,15 +29,22 @@ def solve_mtz(n, distances, relax=False):
     end_time = time()
 
     tour = []
-    for i in cities:
+    current = 0
+    while len(tour) < n:
+        tour.append(current)
+        next_city = -1
         for j in cities:
-            if x[i][j].varValue == 1:
-                tour.append((i, j))
+            if current != j and x[current][j].varValue == 1:
+                next_city = j
+                break
+        if next_city != -1:
+            current = next_city
+        else:
+            break
     return value(problem.objective), tour, end_time - start_time, len(problem.variables()), len(problem.constraints)
 
 
 def solve_dfj_enum(n, distances, relax=False):
-    t0 = time()
     problem = LpProblem("TSP_DFJ", LpMinimize)
     cities = range(n)
     x = None
@@ -55,14 +62,25 @@ def solve_dfj_enum(n, distances, relax=False):
         subsets = combinations(cities, Q)
         for S in subsets:
             problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
-
+    start_time = time()
     val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
-    tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
-    t = time() - t0
-    return val, tour, t, len(problem.variables()), len(problem.constraints)
+    end_time = time()
+    tour = []
+    current = 0
+    while len(tour) < n:
+        tour.append(current)
+        next_city = -1
+        for j in cities:
+            if current != j and x[current][j].varValue > 0.9:
+                next_city = j
+                break
+        if next_city != -1:
+            current = next_city
+        else:
+                break
+    return val, tour, end_time - start_time, len(problem.variables()), len(problem.constraints)
 
 def solve_dfj_iter(n, distances):
-    t0 = time()
     problem = LpProblem("TSP_DFJ_Iter", LpMinimize)
     cities = range(n)
     x = LpVariable.dicts("x", (cities, cities), cat='Binary')
@@ -73,6 +91,7 @@ def solve_dfj_iter(n, distances):
         problem += lpSum(x[j][i] for j in cities if j != i) == 1
 
     iters = 0
+    start_time = time()
     while True:
         iters += 1
         val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
@@ -86,15 +105,14 @@ def solve_dfj_iter(n, distances):
         
         for S in cycles:
             problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
-
-    t = time() - t0
-    return val, tour, t, iters, len(problem.variables()), len(problem.constraints)
+    end_time = time()
+    return val, tour, end_time - start_time, iters, len(problem.variables()), len(problem.constraints)
 
 def get_subtours(x, n):
     edges = {}
     for i in range(n):
         for j in range(n):
-            if i != j and x[i][j].varValue > 0.9:
+            if i != j and x[i][j].varValue == 1:
                 edges[i] = j
     
     subtours = []
