@@ -51,11 +51,10 @@ def solve_dfj_enum(n, distances, relax=False):
         problem += lpSum(x[i][j] for j in cities if j != i) == 1
         problem += lpSum(x[j][i] for j in cities if j != i) == 1
 
-    if relax == False:
-        for Q in range(2, n):
-            subsets = combinations(cities, Q)
-            for S in subsets:
-                problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
+    for Q in range(2, n):
+        subsets = combinations(cities, Q)
+        for S in subsets:
+            problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
 
     val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
     tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
