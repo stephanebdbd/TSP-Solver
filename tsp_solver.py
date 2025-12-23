@@ -91,10 +91,15 @@ def solve_dfj_iter(n, distances):
         problem += lpSum(x[j][i] for j in cities if j != i) == 1
 
     iters = 0
-    start_time = time()
+    solver_time = 0
     while True:
         iters += 1
-        val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
+        
+        t_start = time()
+        status = problem.solve(PULP_CBC_CMD(msg=False))
+        solver_time += time() - t_start
+        
+        val = value(problem.objective) if status == LpStatusOptimal else None
         tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
         
         cycles = get_subtours(x, n)
@@ -105,8 +110,8 @@ def solve_dfj_iter(n, distances):
         
         for S in cycles:
             problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
-    end_time = time()
-    return val, tour, end_time - start_time, iters, len(problem.variables()), len(problem.constraints)
+
+    return val, tour, solver_time, iters, len(problem.variables()), len(problem.constraints)
 
 def get_subtours(x, n):
     edges = {}
