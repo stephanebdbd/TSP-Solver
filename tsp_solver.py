@@ -33,7 +33,7 @@ def solve_mtz(n, distances, relax=False):
         for j in cities:
             if x[i][j].varValue == 1:
                 tour.append((i, j))
-    return value(problem.objective), tour, end_time - start_time
+    return value(problem.objective), tour, end_time - start_time, len(problem.variables()), len(problem.constraints)
 
 
 def solve_dfj_enum(n, distances, relax=False):
@@ -52,15 +52,15 @@ def solve_dfj_enum(n, distances, relax=False):
         problem += lpSum(x[j][i] for j in cities if j != i) == 1
 
     if relax == False:
-        for Qx in range(2, n):
-            subsets = combinations(cities, Qx)
+        for Q in range(2, n):
+            subsets = combinations(cities, Q)
             for S in subsets:
                 problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
 
     val = value(problem.objective) if problem.solve(PULP_CBC_CMD(msg=False)) == LpStatusOptimal else None
     tour = [(i, j) for i in cities for j in cities if x[i][j].varValue == 1]
     t = time() - t0
-    return val, tour, t
+    return val, tour, t, len(problem.variables()), len(problem.constraints)
 
 def solve_dfj_iter(n, distances):
     t0 = time()
@@ -89,7 +89,7 @@ def solve_dfj_iter(n, distances):
             problem += lpSum(x[i][j] for i in S for j in S if i != j) <= len(S) - 1
 
     t = time() - t0
-    return val, tour, t, iters
+    return val, tour, t, iters, len(problem.variables()), len(problem.constraints)
 
 def get_subtours(x, n):
     edges = {}
@@ -123,10 +123,13 @@ def get_subtours(x, n):
 
 
 def read_instance(filename):
-    dir = "instances"
     if not filename.endswith(".txt"):
         filename = filename + ".txt"
-    path = os.path.join(dir, filename)
+    if not os.path.exists(filename):
+         path = os.path.join("instances", filename)
+    else:
+         path = filename
+         
     with open(path, 'r') as f:
         lines = [l.strip() for l in f if l.strip()]
     
@@ -172,19 +175,19 @@ if __name__ == "__main__":
     n, coords, dists = read_instance(filename)
     
     if f == 0:
-        val, tour, t = solve_mtz(n, dists, relax=False)
-        print_solution(val, tour, t, status="Optimal")
+        val, tour, t, vars, constr = solve_mtz(n, dists, relax=False)
+        print_solution(val, tour, t, status="Optimal")  
     elif f == 1:
-        val, tour, t = solve_mtz(n, dists, relax=True)
+        val, tour, t, vars, constr = solve_mtz(n, dists, relax=True)
         print_solution(val, None, t, status="Relaxed")
     elif f == 2:
-        val, tour, t = solve_dfj_enum(n, dists, relax=False)
+        val, tour, t, vars, constr = solve_dfj_enum(n, dists, relax=False)
         print_solution(val, tour, t, status="Optimal")
     elif f == 3:
-        val, tour, t = solve_dfj_enum(n, dists, relax=True)
+        val, tour, t, vars, constr = solve_dfj_enum(n, dists, relax=True)
         print_solution(val, None, t, status="Relaxed")
     elif f == 4:
-        val, tour, t, iters = solve_dfj_iter(n, dists)
+        val, tour, t, iters, vars, constr = solve_dfj_iter(n, dists)
         print_solution(val, tour, t, iters, status="Optimal")
     else:
         print("????")
