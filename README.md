@@ -8,17 +8,14 @@ It was developed by a team of two for the **Algorithmics and Operations Research
 
 The main goal of this project is to analyze and compare different ILP formulations for the TSP:
 
-1. 
-**Miller-Tucker-Zemlin (MTZ)** formulation.
+1. **Miller-Tucker-Zemlin (MTZ)** formulation.
 
 
-2. 
-**Dantzig-Fulkerson-Johnson (DFJ)** formulation.
+2. **Dantzig-Fulkerson-Johnson (DFJ)** formulation.
 
 
 * **Enumerative:** Generating all subtour elimination constraints a priori.
-* 
-**Iterative:** Using a "Constraint Generation" approach to add subtour elimination constraints on the fly.
+* **Iterative:** Using a "Constraint Generation" approach to add subtour elimination constraints on the fly.
 
 
 
@@ -37,12 +34,10 @@ The project also involves analyzing the **Linear Relaxation** of these models an
 
 ## 📂 Project Structure
 
-* 
-`tsp_solver.py`: Main script handling the model creation, solving, and constraint generation.
+* `tsp_solver.py`: Main script handling the model creation, solving, and constraint generation.
 
 
-* 
-`instances/`: Folder containing TSP instances (Euclidean, Random, Circle, etc.).
+* `instances/`: Folder containing TSP instances (Euclidean, Random, Circle, etc.).
 
 
 * `results.csv`: Generated file containing performance metrics for each run.
