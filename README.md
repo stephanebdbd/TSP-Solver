@@ -10,8 +10,8 @@ The main goal of this project is to analyze and compare different ILP formulatio
 
 1. **Miller-Tucker-Zemlin (MTZ)** formulation.
 2. **Dantzig-Fulkerson-Johnson (DFJ)** formulation.
-  * **Enumerative:** Generating all subtour elimination constraints a priori.
-  * **Iterative:** Using a "Constraint Generation" approach to add subtour elimination constraints on the fly.
+   * **Enumerative:** Generating all subtour elimination constraints a priori.
+   * **Iterative:** Using a "Constraint Generation" approach to add subtour elimination constraints on the fly.
 
 The project also involves analyzing the **Linear Relaxation** of these models and comparing their performance (execution time, number of variables/constraints, and integrality gap).
 
@@ -41,11 +41,11 @@ Arguments
 
 * `<instance_file>`: Path to the instance file (e.g., `instances/instance_10_random_sym_1.txt`).
 * `<method_id>`: Integer indicating the formulation to use:
-  * `0`: **MTZ** (Integer Solution) 
-  * `1`: **MTZ** (Linear Relaxation) 
-  * `2`: **DFJ Enumerative** (Integer Solution - *Warning: Slow for n > 15*) 
-  * `3`: **DFJ Enumerative** (Linear Relaxation) 
-  * `4`: **DFJ Iterative** (Constraint Generation) 
+   * `0`: **MTZ** (Integer Solution) 
+   * `1`: **MTZ** (Linear Relaxation) 
+   * `2`: **DFJ Enumerative** (Integer Solution - *Warning: Slow for n > 15*) 
+   * `3`: **DFJ Enumerative** (Linear Relaxation) 
+   * `4`: **DFJ Iterative** (Constraint Generation) 
 
 ### Example
 
